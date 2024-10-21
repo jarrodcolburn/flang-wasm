@@ -34,12 +34,14 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
     sudo \
     tzdata \
     unzip \
-    wget
+    wget && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 
 # Install emsdk
-RUN git clone --depth=1 https://github.com/emscripten-core/emsdk.git /opt/emsdk
 WORKDIR /opt/emsdk
-RUN ./emsdk install "${EMSCRIPTEN_VERSION}" && \
+RUN git clone --depth=1 https://github.com/emscripten-core/emsdk.git && \
+    ./emsdk install "${EMSCRIPTEN_VERSION}" && \
     ./emsdk activate "${EMSCRIPTEN_VERSION}"  && \
     echo "EMSDK_QUIET=1 source /opt/emsdk/emsdk_env.sh" >> ~/.bashrc
 
@@ -48,16 +50,16 @@ COPY Makefile /root/flang-wasm/Makefile
 RUN cd /root/flang-wasm && \
     make PREFIX="/opt/flang" FLANG_WASM_CMAKE_VARS="-DCMAKE_C_COMPILER=clang \
         -DCMAKE_CXX_COMPILER=clang++ -DLLVM_USE_LINKER=lld" && \
-    make PREFIX="/opt/flang" install
+    make PREFIX="/opt/flang" install 
 
 # Clean up
-RUN emcc --clear-cache
-RUN rm -rf /root/flang-wasm /opt/emsdk/downloads/*
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+#RUN emcc --clear-cache
+#RUN rm -rf /root/flang-wasm /opt/emsdk/downloads/*
+
 
 # Squash docker image layers
-FROM $BASE
-ENV DEBIAN_FRONTEND=noninteractive TZ=UTC
-COPY --from=0 / /
+#FROM $BASE
+#ENV DEBIAN_FRONTEND=noninteractive TZ=UTC
+#COPY --from=0 / /
 SHELL ["/bin/bash", "-c"]
 
