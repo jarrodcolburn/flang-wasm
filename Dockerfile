@@ -40,18 +40,18 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
 RUN git clone --depth=1 https://github.com/emscripten-core/emsdk.git /opt/emsdk
 WORKDIR /opt/emsdk
 RUN ./emsdk install "${EMSCRIPTEN_VERSION}" && \
-    ./emsdk activate "${EMSCRIPTEN_VERSION}"
+    ./emsdk activate "${EMSCRIPTEN_VERSION}"  && \
+    echo "EMSDK_QUIET=1 source /opt/emsdk/emsdk_env.sh" >> ~/.bashrc
 
 # Build LLVM flang
 COPY Makefile /root/flang-wasm/Makefile
-RUN . /opt/emsdk/emsdk_env.sh && \
-    cd /root/flang-wasm && \
+RUN cd /root/flang-wasm && \
     make PREFIX="/opt/flang" FLANG_WASM_CMAKE_VARS="-DCMAKE_C_COMPILER=clang \
         -DCMAKE_CXX_COMPILER=clang++ -DLLVM_USE_LINKER=lld" && \
     make PREFIX="/opt/flang" install
 
 # Clean up
-RUN . /opt/emsdk/emsdk_env.sh && emcc --clear-cache
+RUN emcc --clear-cache
 RUN rm -rf /root/flang-wasm /opt/emsdk/downloads/*
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
